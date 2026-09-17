@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { api } from "@/lib/api";
@@ -62,8 +63,7 @@ export default function AdminEvaluationsPage() {
         <textarea className="input md:col-span-2 min-h-16" placeholder="Evidence (optional)" value={form.evidence} onChange={(e) => setForm({ ...form, evidence: e.target.value })} />
         <button type="submit" className="btn-primary md:col-span-2">Save Evaluation</button>
       </form>
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      <DataTable>
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Employee</th>
@@ -82,8 +82,7 @@ export default function AdminEvaluationsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
     </div>
   );
 }

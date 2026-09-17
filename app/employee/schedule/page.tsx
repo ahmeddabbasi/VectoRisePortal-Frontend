@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
+import { RuleViolationAlert } from "@/components/RuleViolationAlert";
 import { StatusBadge } from "@/components/StatusBadge";
 import { api } from "@/lib/api";
+import { getApiError, type ViolationDetail } from "@/lib/violations";
 import { DAY_NAMES, addDays, formatDateISO, getMonday } from "@/lib/dates";
 
 type DayForm = {
@@ -31,6 +34,7 @@ export default function EmployeeSchedulePage() {
   const [existing, setExisting] = useState<any[]>([]);
   const [locked, setLocked] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [alert, setAlert] = useState<ViolationDetail | null>(null);
   const [changeReason, setChangeReason] = useState("");
   const [changeProposal, setChangeProposal] = useState("");
 
@@ -60,17 +64,21 @@ export default function EmployeeSchedulePage() {
 
   async function submit() {
     setMessage(null);
+    setAlert(null);
     try {
       await api.submitSchedule({ week_start: weekStart, days });
       setMessage("Schedule submitted successfully.");
       setExisting(await api.getSchedule(weekStart));
-    } catch (e: any) {
-      setMessage(e.message);
+    } catch (e) {
+      const { message: errMessage, violation } = getApiError(e);
+      if (violation) setAlert(violation);
+      else setMessage(errMessage);
     }
   }
 
   async function requestChange() {
     setMessage(null);
+    setAlert(null);
     try {
       await api.requestScheduleChange({
         reason: changeReason,
@@ -79,8 +87,10 @@ export default function EmployeeSchedulePage() {
       setMessage("Change request submitted for admin review.");
       setChangeReason("");
       setChangeProposal("");
-    } catch (e: any) {
-      setMessage(e.message);
+    } catch (e) {
+      const { message: errMessage, violation } = getApiError(e);
+      if (violation) setAlert(violation);
+      else setMessage(errMessage);
     }
   }
 
@@ -103,10 +113,10 @@ export default function EmployeeSchedulePage() {
         {locked ? <StatusBadge status="locked" /> : existing.length ? <StatusBadge status="submitted" /> : <StatusBadge status="draft" />}
       </div>
 
+      {alert ? <RuleViolationAlert violation={alert} onDismiss={() => setAlert(null)} /> : null}
       {message ? <p className="text-sm text-brand">{message}</p> : null}
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      <DataTable minWidth="42rem">
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Day</th>
@@ -152,8 +162,7 @@ export default function EmployeeSchedulePage() {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
 
       {!locked ? (
         <button type="button" className="btn-primary" onClick={submit}>Submit Schedule</button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -19,8 +20,7 @@ export default function EmployeeAttendancePage() {
   return (
     <div className="space-y-8">
       <PageHeader eyebrow="Employee" title="Attendance & Timesheet" description="Your check-in history and working sessions." />
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      <DataTable minWidth="32rem">
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Date</th>
@@ -41,8 +41,7 @@ export default function EmployeeAttendancePage() {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+      </DataTable>
     </div>
   );
 }

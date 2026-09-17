@@ -7,9 +7,11 @@ import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { TableSkeleton } from "@/components/InlineSkeleton";
 
+import { RuleViolationAlert } from "@/components/RuleViolationAlert";
 import { StatusBadge } from "@/components/StatusBadge";
 
 import { api } from "@/lib/api";
+import { EXCEPTION_GUIDES, getApiError, type ViolationDetail } from "@/lib/violations";
 import { useCachedQuery } from "@/lib/useApiQuery";
 
 
@@ -25,6 +27,7 @@ export default function EmployeeTasksPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [alert, setAlert] = useState<ViolationDetail | null>(null);
 
 
 
@@ -74,46 +77,44 @@ export default function EmployeeTasksPage() {
 
 
 
-  async function toggleItem(taskId: number, itemId: number, completed: boolean) {
-
-    await api.toggleChecklist(taskId, itemId, !completed);
-
-    await reload();
-
+  async function runTaskAction(action: () => Promise<void>) {
+    setAlert(null);
+    try {
+      await action();
+      await reload();
+    } catch (err) {
+      const { message, violation } = getApiError(err);
+      if (violation) setAlert(violation);
+      else setError(message);
+    }
   }
 
-
+  async function toggleItem(taskId: number, itemId: number, completed: boolean) {
+    await runTaskAction(() => api.toggleChecklist(taskId, itemId, !completed));
+  }
 
   async function updateStatus(taskId: number, status: string) {
-
-    await api.updateEmployeeTask(taskId, { status });
-
-    await reload();
-
+    await runTaskAction(() => api.updateEmployeeTask(taskId, { status }));
   }
-
-
 
   async function startTimer(taskId: number) {
-
-    const res = await api.startTimer(taskId);
-
-    setActiveTimer(res.id);
-
+    setAlert(null);
+    try {
+      const res = await api.startTimer(taskId);
+      setActiveTimer(res.id);
+    } catch (err) {
+      const { message, violation } = getApiError(err);
+      if (violation) setAlert(violation);
+      else setError(message);
+    }
   }
 
-
-
   async function stopTimer() {
-
     if (!activeTimer) return;
-
-    await api.stopTimer(activeTimer);
-
-    setActiveTimer(null);
-
-    await reload();
-
+    await runTaskAction(async () => {
+      await api.stopTimer(activeTimer);
+      setActiveTimer(null);
+    });
   }
 
 
@@ -121,6 +122,7 @@ export default function EmployeeTasksPage() {
 
   const rows = tasks ?? [];
   const pending = rows.filter((t) => t.status === "pending_approval");
+  const rejected = rows.filter((t) => t.status === "rejected");
   const active = rows.filter((t) => t.status !== "pending_approval" && t.status !== "rejected");
 
   return (
@@ -137,7 +139,7 @@ export default function EmployeeTasksPage() {
 
       />
 
-
+      {alert ? <RuleViolationAlert violation={alert} onDismiss={() => setAlert(null)} /> : null}
 
       <form onSubmit={submitTask} className="card grid gap-4 p-6 md:grid-cols-2">
 
@@ -239,7 +241,38 @@ export default function EmployeeTasksPage() {
 
       ) : null}
 
-
+      {rejected.length ? (
+        <div className="space-y-4">
+          <h2 className="font-display text-lg">Rejected tasks</h2>
+          {rejected.map((task) => (
+            <div key={task.id} className="card border-l-4 border-l-red-400 p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-display text-lg">{task.title}</p>
+                  <p className="text-sm text-muted-foreground">{task.description}</p>
+                  {task.notes ? <p className="mt-2 text-sm text-red-700">Reason: {task.notes}</p> : null}
+                </div>
+                <StatusBadge status={task.status} />
+              </div>
+              <RuleViolationAlert
+                className="mt-4"
+                violation={{
+                  code: "task_rejected",
+                  title: "This task was not approved",
+                  message: task.notes || "Admin did not approve this task submission.",
+                  severity: "error",
+                  link: "/employee/tasks",
+                  steps: [
+                    "Review the rejection reason above.",
+                    "Submit a new task with clearer details if you still need the work logged.",
+                    "Contact your manager if you disagree with the decision.",
+                  ],
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div className="space-y-4">
 
@@ -264,6 +297,10 @@ export default function EmployeeTasksPage() {
               <StatusBadge status={task.status} />
 
             </div>
+
+            {task.status === "overdue" ? (
+              <RuleViolationAlert className="mt-4" violation={EXCEPTION_GUIDES.overdue_task} />
+            ) : null}
 
             <div className="mt-4 flex flex-wrap gap-3 text-sm text-muted-foreground">
 

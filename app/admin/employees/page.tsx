@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { TableSkeleton } from "@/components/InlineSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -67,8 +68,7 @@ export default function AdminEmployeesPage() {
         <input className="input" placeholder="Password (min 8 characters)" type="password" minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
         <button type="submit" className="btn-primary md:col-span-2">Add Employee</button>
       </form>
-      {!data && loading ? <TableSkeleton rows={8} /> : <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      {!data && loading ? <TableSkeleton rows={8} /> : <DataTable minWidth="40rem">
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Code</th>
@@ -87,12 +87,11 @@ export default function AdminEmployeesPage() {
                 <td className="px-4 py-3">{emp.email}</td>
                 <td className="px-4 py-3">{emp.department_name || "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={emp.status} /></td>
-                <td className="px-4 py-3"><button type="button" className="text-xs text-brand" onClick={() => setEditing({ ...emp })}>Edit</button></td>
+                <td className="px-4 py-3"><button type="button" className="tap-target text-xs text-brand" onClick={() => setEditing({ ...emp })}>Edit</button></td>
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>}
+      </DataTable>}
       {editing ? (
         <div className="card space-y-4 p-6">
           <h2 className="font-display text-lg">Edit {editing.name}</h2>

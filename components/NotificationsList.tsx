@@ -29,6 +29,16 @@ export function NotificationsList({ items, onMarkRead }: Props) {
         <div key={n.id} className={`card p-4 ${n.is_read ? "opacity-70" : "border-l-4 border-l-[#1c7fd4]"}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
+              {n.notification_type === "announcement" ? (
+                <span className="mb-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-900">
+                  Announcement
+                </span>
+              ) : null}
+              {n.notification_type === "exception" ? (
+                <span className="mb-1 inline-block rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-orange-900">
+                  Exception
+                </span>
+              ) : null}
               <p className="font-medium">{n.title}</p>
               <p className="text-sm text-muted-foreground">{n.message}</p>
               <p className="mt-1 font-mono-custom text-[10px] text-muted-foreground">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { api } from "@/lib/api";
@@ -62,8 +63,7 @@ export default function AdminDepartmentsPage() {
         <input className="input" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         <button type="submit" className="btn-primary md:col-span-2">Add Department</button>
       </form>
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      <DataTable>
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Name</th>
@@ -83,8 +83,7 @@ export default function AdminDepartmentsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
       {editing ? (
         <div className="card space-y-4 p-6">
           <h2 className="font-display text-lg">Edit {editing.name}</h2>

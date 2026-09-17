@@ -1,5 +1,6 @@
 "use client";
 import { HrmAttendanceBarChart } from "@/components/charts-dynamic";
+import { DataTable } from "@/components/DataTable";
 import { KpiGrid } from "@/components/KpiGrid";
 import { PageHeader } from "@/components/PageHeader";
 import { KpiSkeleton } from "@/components/InlineSkeleton";
@@ -52,7 +53,7 @@ export default function AdminReportsPage() {
                 <button key={e.id} type="button" className="btn-secondary text-xs" onClick={() => calculateFor(e.id)}>Calculate: {e.name}</button>
               ))}
             </div>
-            <table className="w-full text-left">
+            <DataTable minWidth="28rem">
               <thead className="table-head">
                 <tr>
                   <th className="px-4 py-3">Employee</th>
@@ -69,7 +70,7 @@ export default function AdminReportsPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </>
       )}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { KpiGrid } from "@/components/KpiGrid";
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -49,8 +50,7 @@ export default function AdminAttendancePage() {
           { label: "Missing Checkout", value: summary.missing_checkout },
         ]} />
       ) : null}
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      <DataTable>
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Date</th>
@@ -72,13 +72,12 @@ export default function AdminAttendancePage() {
                 <td className="px-4 py-3">{r.total_minutes ?? "—"}</td>
                 <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-3">
-                  <button type="button" className="text-xs text-brand" onClick={() => setEditing({ ...r, status: r.status })}>Correct</button>
+                  <button type="button" className="tap-target text-xs text-brand" onClick={() => setEditing({ ...r, status: r.status })}>Correct</button>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
       {editing ? (
         <div className="card space-y-4 p-6">
           <h2 className="font-display text-lg">Correct Attendance — {editing.employee_name}</h2>

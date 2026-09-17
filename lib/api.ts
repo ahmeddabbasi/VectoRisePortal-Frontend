@@ -1,4 +1,8 @@
 import { getToken } from "@/lib/auth";
+import { ApiError, type ViolationDetail } from "@/lib/violations";
+
+export { ApiError };
+export type { ViolationDetail };
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -57,6 +61,7 @@ const INVALIDATION_MAP: Record<string, string[]> = {
   "/api/admin/departments": ["/api/admin/departments", "/api/admin/employees"],
   "/api/admin/settings": ["/api/admin/settings"],
   "/api/admin/evaluations": ["/api/admin/evaluations", "/api/admin/performance"],
+  "/api/admin/announcements": ["/api/admin/announcements", "/api/chat/announcements", "/api/notifications"],
   "/api/hrm/tasks": ["/api/hrm/tasks", "/api/admin/dashboard", "/api/employee/tasks", "/api/hrm/reports"],
   "/api/hrm/attendance": ["/api/hrm/attendance", "/api/admin/dashboard"],
   "/api/hrm/exceptions": ["/api/hrm/exceptions", "/api/employee/exceptions"],
@@ -130,6 +135,10 @@ async function fetchJson<T>(
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         const detail = err.detail;
+        if (detail && typeof detail === "object" && !Array.isArray(detail) && "code" in detail) {
+          const violation = detail as ViolationDetail;
+          throw new ApiError(violation.message || violation.title, violation);
+        }
         const message = typeof detail === "string"
           ? detail
           : Array.isArray(detail)
@@ -227,6 +236,8 @@ export const api = {
   adminSettings: () => fetchJson<Record<string, string>>("/api/admin/settings"),
   updateSettings: (settings: Record<string, string>) => put<Record<string, string>>("/api/admin/settings", { settings }),
   auditLogs: () => fetchJson<any[]>("/api/admin/audit-logs"),
+  adminAnnouncements: () => fetchJson<any[]>("/api/admin/announcements"),
+  createAnnouncement: (data: { title: string; body: string }) => post<any>("/api/admin/announcements", data),
   createEvaluation: (data: Record<string, unknown>) => post<any>("/api/admin/evaluations", data),
   listEvaluations: () => fetchJson<any[]>("/api/admin/evaluations"),
   performanceScores: () => fetchJson<any[]>("/api/admin/performance/scores"),
@@ -298,6 +309,7 @@ export const api = {
   employeePerformance: () => fetchJson<any>("/api/employee/performance"),
 
   chatUnreadCount: () => fetchJson<{ count: number }>("/api/chat/unread-count"),
+  chatAnnouncements: () => fetchJson<any[]>("/api/chat/announcements"),
   chatConversations: () => fetchJson<any[]>("/api/chat/conversations"),
   chatUsers: () => fetchJson<any[]>("/api/chat/users"),
   startDirectChat: (data: { employee_id?: number; user_id?: number }) => post<{ id: number }>("/api/chat/conversations/direct", data),
@@ -345,10 +357,11 @@ export const api = {
       "/admin/exceptions": ["/api/hrm/exceptions"],
       "/admin/reports": ["/api/hrm/reports", "/api/admin/performance/scores"],
       "/admin/evaluations": ["/api/admin/evaluations", "/api/admin/performance/scores"],
+      "/admin/announcements": ["/api/admin/announcements"],
       "/admin/settings": ["/api/admin/settings"],
       "/admin/audit": ["/api/admin/audit-logs"],
       "/admin/notifications": ["/api/notifications?days=3"],
-      "/admin/chat": ["/api/chat/conversations", "/api/chat/users"],
+      "/admin/chat": ["/api/chat/conversations", "/api/chat/users", "/api/chat/announcements"],
       "/employee/dashboard": ["/api/employee/dashboard"],
       "/employee/attendance": ["/api/employee/attendance"],
       "/employee/schedule": ["/api/employee/schedule"],
@@ -357,7 +370,7 @@ export const api = {
       "/employee/exceptions": ["/api/employee/exceptions"],
       "/employee/notifications": ["/api/notifications?days=3"],
       "/employee/profile": ["/api/employee/profile"],
-      "/employee/chat": ["/api/chat/conversations", "/api/chat/users"],
+      "/employee/chat": ["/api/chat/conversations", "/api/chat/users", "/api/chat/announcements"],
     };
     const match = Object.entries(routes)
       .sort((a, b) => b[0].length - a[0].length)

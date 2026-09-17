@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { api } from "@/lib/api";
@@ -49,8 +50,7 @@ export default function AdminSchedulesPage() {
         <button type="button" className="btn-secondary" onClick={lockSchedules}>Lock Expired Schedules</button>
         <button type="button" className="btn-secondary" onClick={runJobs}>Run Daily Jobs</button>
       </div>
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      <DataTable>
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Employee</th>
@@ -69,8 +69,7 @@ export default function AdminSchedulesPage() {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
       <div className="space-y-4">
         <h2 className="font-display text-lg">Pending Change Requests</h2>
         {changes.map((c) => (

@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { KpiGrid } from "@/components/KpiGrid";
 import { PageHeader } from "@/components/PageHeader";
 import { KpiSkeleton } from "@/components/InlineSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
+import { RuleViolationAlert } from "@/components/RuleViolationAlert";
 import { api } from "@/lib/api";
+import { getApiError, type ViolationDetail } from "@/lib/violations";
 import { useApiQuery } from "@/lib/useApiQuery";
 
 export default function EmployeeDashboardPage() {
@@ -14,13 +17,19 @@ export default function EmployeeDashboardPage() {
     () => api.getCached("/api/employee/dashboard"),
   );
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState<ViolationDetail | null>(null);
 
   async function handleCheckIn() {
     setLoading(true);
+    setAlert(null);
     try {
-      await api.checkIn();
+      const result = await api.checkIn();
       const refreshed = await api.employeeDashboard();
       setData(refreshed);
+      if (result?.notice) setAlert(result.notice);
+    } catch (err) {
+      const { violation } = getApiError(err);
+      if (violation) setAlert(violation);
     } finally {
       setLoading(false);
     }
@@ -28,10 +37,15 @@ export default function EmployeeDashboardPage() {
 
   async function handleCheckOut() {
     setLoading(true);
+    setAlert(null);
     try {
-      await api.checkOut();
+      const result = await api.checkOut();
       const refreshed = await api.employeeDashboard();
       setData(refreshed);
+      if (result?.notice) setAlert(result.notice);
+    } catch (err) {
+      const { violation } = getApiError(err);
+      if (violation) setAlert(violation);
     } finally {
       setLoading(false);
     }
@@ -39,6 +53,7 @@ export default function EmployeeDashboardPage() {
 
   const attendance = data?.attendance || {};
   const tasks = data?.tasks || {};
+  const tasksToday = data?.tasks_today || [];
 
   return (
     <div className="space-y-8">
@@ -54,6 +69,8 @@ export default function EmployeeDashboardPage() {
           <KpiSkeleton count={4} />
         </>
       ) : null}
+
+      {alert ? <RuleViolationAlert violation={alert} onDismiss={() => setAlert(null)} /> : null}
 
       {data ? <div className="card p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -85,6 +102,45 @@ export default function EmployeeDashboardPage() {
           { label: "Overdue", value: tasks.overdue ?? 0 },
         ]}
       /> : null}
+
+      {data ? (
+        <section className="card p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-lg">Today&apos;s Tasks</h2>
+            <Link href="/employee/tasks" className="text-sm text-brand hover:underline">
+              View all tasks
+            </Link>
+          </div>
+          {tasksToday.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">No tasks due today. You&apos;re all caught up.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {tasksToday.map((task: any) => (
+                <li key={task.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{task.title}</p>
+                    {task.description ? (
+                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.description}</p>
+                    ) : null}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <StatusBadge status={task.status} />
+                      <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {task.priority}
+                      </span>
+                      {task.progress > 0 ? (
+                        <span className="text-xs text-muted-foreground">{task.progress}% complete</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <Link href="/employee/tasks" className="btn-secondary shrink-0 text-xs">
+                    Open
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
 
       {data?.notifications?.length ? (
         <section className="card p-6">

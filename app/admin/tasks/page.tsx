@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { TableSkeleton } from "@/components/InlineSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -59,11 +60,9 @@ export default function AdminTasksPage() {
       <PageHeader eyebrow="Admin" title="Task Management" description="Approve employee tasks, assign work, and track progress." />
 
       {pending.length ? (
-        <div className="card overflow-hidden">
-          <div className="border-b border-ink/10 px-4 py-3">
-            <h2 className="font-display text-lg">Pending approval ({pending.length})</h2>
-          </div>
-          <table className="w-full text-left">
+        <section className="space-y-3">
+          <h2 className="font-display text-lg">Pending approval ({pending.length})</h2>
+          <DataTable minWidth="36rem">
             <thead className="table-head">
               <tr>
                 <th className="px-4 py-3">Title</th>
@@ -92,8 +91,8 @@ export default function AdminTasksPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </section>
       ) : null}
 
       <form onSubmit={assignTask} className="card grid gap-4 p-6 md:grid-cols-2">
@@ -117,8 +116,7 @@ export default function AdminTasksPage() {
       </form>
 
       {!data && loading ? <TableSkeleton rows={8} /> : null}
-      <div className="card overflow-hidden">
-        <table className="w-full text-left">
+      <DataTable minWidth="40rem">
           <thead className="table-head">
             <tr>
               <th className="px-4 py-3">Title</th>
@@ -141,8 +139,7 @@ export default function AdminTasksPage() {
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+      </DataTable>
     </div>
   );
 }

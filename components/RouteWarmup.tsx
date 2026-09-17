@@ -14,6 +14,7 @@ export const ADMIN_ROUTES = [
   "/admin/exceptions",
   "/admin/reports",
   "/admin/evaluations",
+  "/admin/announcements",
   "/admin/settings",
   "/admin/audit",
   "/admin/notifications",
