@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { api, mediaUrl } from "@/lib/api";
+import { api, fetchAuthedMedia } from "@/lib/api";
 
 export default function EmployeeProfilePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -11,6 +11,7 @@ export default function EmployeeProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [photoSrc, setPhotoSrc] = useState<string | null>(null);
 
   useEffect(() => {
     api.employeeProfile().then((p) => {
@@ -58,9 +59,28 @@ export default function EmployeeProfilePage() {
     }
   }
 
-  if (!profile) return <p>Loading profile...</p>;
+  useEffect(() => {
+    if (!profile?.profile_photo_url) {
+      setPhotoSrc(null);
+      return;
+    }
+    let active = true;
+    let objectUrl: string | null = null;
+    fetchAuthedMedia(profile.profile_photo_url).then((url) => {
+      if (!active) {
+        if (url) URL.revokeObjectURL(url);
+        return;
+      }
+      objectUrl = url;
+      setPhotoSrc(url);
+    });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [profile?.profile_photo_url]);
 
-  const photoSrc = mediaUrl(profile.profile_photo_url);
+  if (!profile) return <p>Loading profile...</p>;
 
   return (
     <div className="space-y-8">
@@ -76,7 +96,7 @@ export default function EmployeeProfilePage() {
           <div>
             <label className="btn-secondary cursor-pointer text-xs">
               {uploading ? "Uploading..." : "Upload photo"}
-              <input type="file" accept="image/*" className="hidden" onChange={onPhotoChange} disabled={uploading} />
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={onPhotoChange} disabled={uploading} />
             </label>
             <p className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP — max 5MB</p>
           </div>
@@ -88,15 +108,15 @@ export default function EmployeeProfilePage() {
         <div><p className="kpi-label">Department</p><p className="mt-1">{profile.department_name || "—"}</p></div>
         <div><p className="kpi-label">Joining Date</p><p className="mt-1">{profile.joining_date || "—"}</p></div>
         <div>
-          <label className="kpi-label">Phone</label>
-          <input className="input mt-1 w-full" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <label className="kpi-label" htmlFor="profile-phone">Phone</label>
+          <input id="profile-phone" className="input mt-1 w-full" autoComplete="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <button type="button" className="btn-primary md:col-span-2" onClick={saveProfile}>Save Profile</button>
       </div>
       <div className="card space-y-4 p-6">
         <h2 className="font-display text-lg">Change Password</h2>
-        <input className="input w-full" type="password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-        <input className="input w-full" type="password" placeholder="New password (min 8 chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+        <input className="input w-full" type="password" autoComplete="current-password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+        <input className="input w-full" type="password" autoComplete="new-password" placeholder="New password (letter and number, 8+ characters)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
         <button type="button" className="btn-secondary" onClick={savePassword}>Update Password</button>
       </div>
     </div>

@@ -44,7 +44,7 @@ export function NotificationsList({ items, onMarkRead }: Props) {
               <p className="mt-1 font-mono-custom text-[10px] text-muted-foreground">
                 {new Date(n.created_at).toLocaleString()}
               </p>
-              {n.link ? (
+              {n.link && n.link.startsWith("/") && !n.link.startsWith("//") ? (
                 <Link href={n.link} className="mt-2 inline-block text-sm text-[#1c7fd4] hover:underline">
                   View details
                 </Link>

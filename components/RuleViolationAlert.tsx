@@ -65,7 +65,7 @@ export function RuleViolationAlert({
                 </ol>
               </div>
             ) : null}
-            {violation.link ? (
+            {violation.link?.startsWith("/") && !violation.link.startsWith("//") ? (
               <Link href={violation.link} className={cn("mt-4 inline-block text-sm font-medium underline", styles.link)}>
                 Go to {violation.link.split("/").pop()?.replace("-", " ")}
               </Link>

@@ -4,6 +4,8 @@ export type AuthUser = {
   employee_id: number | null;
   name: string | null;
   token: string;
+  sales_access: boolean;
+  can_review_tasks: boolean;
 };
 
 const STORAGE_KEY = "vectorise_auth";

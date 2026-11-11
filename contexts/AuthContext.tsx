@@ -43,6 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           employee_id: me.employee_id,
           name: me.name,
           token: stored.token,
+          sales_access: Boolean(me.sales_access),
+          can_review_tasks: Boolean(me.can_review_tasks),
         };
         storeAuth(authUser);
         setUser(authUser);
@@ -62,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       employee_id: result.employee_id,
       name: result.name,
       token: result.access_token,
+      sales_access: Boolean(result.sales_access),
+      can_review_tasks: Boolean(result.can_review_tasks),
     };
     storeAuth(authUser);
     setUser(authUser);

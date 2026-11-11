@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DataTable } from "@/components/DataTable";
 import { PageHeader } from "@/components/PageHeader";
 import { TableSkeleton } from "@/components/InlineSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
+import { DocumentList } from "@/components/TaskDocuments";
 import { api } from "@/lib/api";
 import { useApiQuery } from "@/lib/useApiQuery";
 
@@ -19,6 +20,7 @@ export default function AdminTasksPage() {
   );
   const tasks = data?.tasks ?? [];
   const employees = data?.employees ?? [];
+  const [documents, setDocuments] = useState<any[]>([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -30,10 +32,15 @@ export default function AdminTasksPage() {
   });
 
   async function load() {
-    const [taskRows, emps] = await Promise.all([api.hrmTasks(), api.adminEmployees()]);
+    const [taskRows, emps, docs] = await Promise.all([api.hrmTasks(), api.adminEmployees(), api.adminTaskDocuments()]);
     setData({ tasks: taskRows, employees: emps });
+    setDocuments(docs);
     if (emps[0] && !form.assigned_employee_id) setForm((f) => ({ ...f, assigned_employee_id: emps[0].id }));
   }
+
+  useEffect(() => {
+    api.adminTaskDocuments().then(setDocuments).catch(() => setDocuments([]));
+  }, []);
 
   async function assignTask(e: React.FormEvent) {
     e.preventDefault();
@@ -140,6 +147,10 @@ export default function AdminTasksPage() {
             ))}
           </tbody>
       </DataTable>
+      <section className="card space-y-4 p-6">
+        <h2 className="font-display text-lg">Documents submitted for review</h2>
+        <DocumentList rows={documents} />
+      </section>
     </div>
   );
 }

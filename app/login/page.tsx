@@ -35,14 +35,14 @@ export default function LoginPage() {
         <p className="page-description mt-2">Sign in to access your workspace</p>
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="kpi-label">Email</label>
-            <input className="input mt-2 w-full" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label className="kpi-label" htmlFor="login-email">Email</label>
+            <input id="login-email" className="input mt-2 w-full" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div>
-            <label className="kpi-label">Password</label>
-            <input className="input mt-2 w-full" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <label className="kpi-label" htmlFor="login-password">Password</label>
+            <input id="login-password" className="input mt-2 w-full" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-red-600" role="alert">{error}</p> : null}
           <button type="submit" className="btn-primary w-full" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
           </button>

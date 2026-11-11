@@ -1,6 +1,7 @@
 "use client";
 
-import { DEFAULT_PERIOD, Filters } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { api, DEFAULT_PERIOD, Filters } from "@/lib/api";
 
 const PERIODS = [
   { value: "today", label: "Today" },
@@ -22,6 +23,10 @@ type Props = {
 };
 
 export function FilterBar({ filters, onChange, categories = [], showSearch }: Props) {
+  const [employees, setEmployees] = useState<string[]>([]);
+  useEffect(() => {
+    api.employees().then((rows) => setEmployees(rows.map((row) => row.name).filter(Boolean))).catch(() => setEmployees([]));
+  }, []);
   return (
     <div className="card flex flex-wrap items-end gap-3 p-4 sm:gap-4 sm:p-5">
       <Field label="Period">
@@ -44,8 +49,9 @@ export function FilterBar({ filters, onChange, categories = [], showSearch }: Pr
           onChange={(e) => onChange({ ...filters, employee: e.target.value })}
         >
           <option value="all">All Employees</option>
-          <option value="Dawood">Dawood</option>
-          <option value="Hanya">Hanya</option>
+          {employees.map((name) => (
+            <option key={name} value={name}>{name}</option>
+          ))}
         </select>
       </Field>
       <Field label="Category">

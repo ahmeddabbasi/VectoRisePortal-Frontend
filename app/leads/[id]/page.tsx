@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { api } from "@/lib/api";
 
-const LEADS_LIST_PATH = "/admin/sales/leads";
-
 export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
+  const pathname = usePathname();
+  const leadsListPath = pathname.startsWith("/employee/") ? "/employee/sales/leads" : "/admin/sales/leads";
   const [lead, setLead] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export default function LeadDetailPage() {
   if (error) {
     return (
       <div className="space-y-4">
-        <Link href={LEADS_LIST_PATH} className="text-sm text-[#1c7fd4] hover:underline">← Back to leads</Link>
+        <Link href={leadsListPath} className="text-sm text-[#1c7fd4] hover:underline">← Back to leads</Link>
         <p className="text-red-600">{error}</p>
       </div>
     );
@@ -36,7 +36,7 @@ export default function LeadDetailPage() {
 
   return (
     <div className="space-y-8">
-      <Link href={LEADS_LIST_PATH} className="inline-block text-sm text-[#1c7fd4] hover:underline">← Back to leads</Link>
+      <Link href={leadsListPath} className="inline-block text-sm text-[#1c7fd4] hover:underline">← Back to leads</Link>
       <PageHeader
         eyebrow={lead.external_id}
         title={lead.company_name || lead.contact_name}

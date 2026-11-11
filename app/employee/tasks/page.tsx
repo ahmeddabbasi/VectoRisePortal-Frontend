@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { TableSkeleton } from "@/components/InlineSkeleton";
 
 import { RuleViolationAlert } from "@/components/RuleViolationAlert";
+import { TaskDocuments } from "@/components/TaskDocuments";
 import { StatusBadge } from "@/components/StatusBadge";
 
 import { api } from "@/lib/api";
@@ -363,6 +364,8 @@ export default function EmployeeTasksPage() {
               </ul>
 
             ) : null}
+
+            <TaskDocuments taskId={task.id} />
 
           </div>
 

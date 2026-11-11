@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useCategories } from "@/components/CategoriesProvider";
 import { EmptyState } from "@/components/EmptyState";
 import { FilterBar } from "@/components/FilterBar";
@@ -10,7 +11,6 @@ import { TableSkeleton } from "@/components/InlineSkeleton";
 import { api, Filters, paths } from "@/lib/api";
 
 const DEFAULT_FILTERS: Filters = { employee: "all", category: "all", search: "" };
-const LEAD_DETAIL_BASE = "/admin/sales/leads";
 
 function useDebouncedValue<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);
@@ -23,6 +23,8 @@ function useDebouncedValue<T>(value: T, delay = 300): T {
 
 export default function LeadsPage() {
   const categories = useCategories();
+  const pathname = usePathname();
+  const leadDetailBase = pathname.startsWith("/employee/") ? "/employee/sales/leads" : "/admin/sales/leads";
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const debouncedSearch = useDebouncedValue(filters.search || "", 300);
   const queryFilters = { ...filters, search: debouncedSearch };
@@ -86,7 +88,7 @@ export default function LeadsPage() {
               {leads.map((lead) => (
                 <tr key={lead.id} className="table-row">
                   <td className="px-4 py-3">
-                    <Link href={`${LEAD_DETAIL_BASE}/${lead.id}`} className="text-link">
+                    <Link href={`${leadDetailBase}/${lead.id}`} className="text-link">
                       {lead.external_id}
                     </Link>
                   </td>

@@ -1,4 +1,4 @@
-import { getToken } from "@/lib/auth";
+import { getStoredAuth, getToken, storeAuth } from "@/lib/auth";
 import { ApiError, type ViolationDetail } from "@/lib/violations";
 
 export { ApiError };
@@ -13,8 +13,31 @@ export function setOnUnauthorized(cb: () => void) {
 
 export function mediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
-  if (path.startsWith("http")) return path;
+  if (path.startsWith("http")) return null;
   return `${API_URL}${path}`;
+}
+
+const PROFILE_FILE = /^\d+_[a-f0-9]{32}\.(jpg|jpeg|png|webp|gif)$/i;
+
+export async function fetchAuthedMedia(path: string | null | undefined): Promise<string | null> {
+  if (!path || path.startsWith("http")) return null;
+  const name = path.split("/").pop()?.split("?")[0] || "";
+  if (!PROFILE_FILE.test(name)) return null;
+  const res = await fetch(`${API_URL}/api/media/profile/${name}`, { headers: authHeaders() });
+  if (!res.ok) return null;
+  return URL.createObjectURL(await res.blob());
+}
+
+export async function downloadAuthedFile(path: string, filename: string) {
+  if (!path.startsWith("/api/media/tasks/")) return;
+  const res = await fetch(`${API_URL}${path}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Could not open that file");
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename || "document";
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 const DEFAULT_PERIOD = "last_month";
@@ -218,14 +241,28 @@ export const api = {
       { method: "POST", body: JSON.stringify({ email, password }) },
       false
     ),
-  changePassword: (current_password: string, new_password: string) =>
-    post("/api/auth/change-password", { current_password, new_password }),
+  changePassword: async (current_password: string, new_password: string) => {
+    const result = await post<{ status: string; access_token: string }>("/api/auth/change-password", {
+      current_password,
+      new_password,
+    });
+    const auth = getStoredAuth();
+    if (auth && result.access_token) storeAuth({ ...auth, token: result.access_token });
+    return result;
+  },
   me: () => fetchJson<{ id: number; email: string; role: string; employee_id: number | null; name: string | null; is_active: boolean }>("/api/auth/me"),
 
   adminDashboard: () => fetchJson<any>("/api/admin/dashboard"),
   adminEmployees: () => fetchJson<any[]>("/api/admin/employees"),
   createEmployee: (data: Record<string, unknown>) => post<any>("/api/admin/employees", data),
   updateEmployee: (id: number, data: Record<string, unknown>) => put<any>(`/api/admin/employees/${id}`, data),
+  deleteEmployee: (id: number) => {
+    invalidateCache("/api/admin/employees");
+    invalidateCache("/api/employees");
+    invalidateCache("/api/hrm/tasks");
+    invalidateCache("/api/leads");
+    return fetchJson<{ status: string }>(`/api/admin/employees/${id}`, { method: "DELETE" });
+  },
   adminDepartments: () => fetchJson<any[]>("/api/admin/departments"),
   createDepartment: (data: { name: string; description?: string }) => post<any>("/api/admin/departments", data),
   updateDepartment: (id: number, data: { name?: string; description?: string }) => put<any>(`/api/admin/departments/${id}`, data),
@@ -287,6 +324,28 @@ export const api = {
     return res.json() as Promise<{ profile_photo_url: string }>;
   },
   employeeTasks: () => fetchJson<any[]>("/api/employee/tasks"),
+  taskDocuments: (taskId: number) => fetchJson<any[]>(`/api/employee/tasks/${taskId}/documents`),
+  uploadTaskDocument: async (taskId: number, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_URL}/api/employee/tasks/${taskId}/documents`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: form,
+    });
+    if (res.status === 401) {
+      onUnauthorized?.();
+      throw new Error("Session expired. Please sign in again.");
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(typeof err.detail === "string" ? err.detail : "Upload failed");
+    }
+    return res.json();
+  },
+  reviewDocuments: () => fetchJson<any[]>("/api/employee/reviews/documents"),
+  adminTaskDocuments: () => fetchJson<any[]>("/api/admin/task-documents"),
+  adminErrors: () => fetchJson<any[]>("/api/admin/errors"),
   createEmployeeTask: (data: Record<string, unknown>) => post<any>("/api/employee/tasks", data),
   updateEmployeeTask: (id: number, data: Record<string, unknown>) => put<any>(`/api/employee/tasks/${id}`, data),
   toggleChecklist: (taskId: number, itemId: number, completed: boolean) =>
@@ -328,6 +387,9 @@ export const api = {
   leadsCount: () => fetchJson<{ count: number }>("/api/leads/count", {}, true, { fresh: true }),
   lead: (id: number) => fetchJson<any>(paths.lead(id)),
   sources: () => fetchJson<any[]>(paths.sources()),
+  previewSheet: (data: { spreadsheet_url: string; data_type: string; sheet_gid?: number }) =>
+    post<any>("/api/settings/sources/preview", data),
+  createSource: (data: Record<string, unknown>) => post<any>("/api/settings/sources", data),
   syncStatus: () => fetchJson<any>(paths.syncStatus()),
   syncNow: () => post<any>("/api/sync"),
   waitForSync: async (timeoutMs = 180000) => {
